@@ -24,3 +24,10 @@ tab_peremereenf <- tab_peremereenf %>%
 
 toutes_les_q <- toutes_les_q %>%
   mutate(Nb_verres_30 = ifelse(Nb_verres_30[1:2243] == 1, "1 à 2 fois"))
+library(dplyr)
+
+bdd <- bdd %>%
+  mutate(Nb_verres_30 = case_when(
+    Nb_verres_30 == 1 ~ "1 verre ou 2",
+    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
+  ))
