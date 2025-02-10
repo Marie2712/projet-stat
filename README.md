@@ -26,38 +26,12 @@ tab_peremereenf <- tab_peremereenf %>%
 tab_peremereenf <- tab_peremereenf %>%
   mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 1 ~ "0 fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-
-tab_peremereenf <- tab_peremereenf %>%
-  mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 2 ~ "1-2 fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-tab_peremereenf <- tab_peremereenf %>%
-  mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 3 ~ "3-5 fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-
-tab_peremereenf <- tab_peremereenf %>%
-  mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 4 ~ "6-9 fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-tab_peremereenf <- tab_peremereenf %>%
-  mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 5 ~ "10-19 fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-tab_peremereenf <- tab_peremereenf %>%
-  mutate(Nb_verres_30 = case_when(
-    Nb_verres_30 == 6 ~ "20- 29fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-tab_peremereenf <- tab_peremereenf %>%
-  mutate(Nb_verres_30 = case_when(
+    Nb_verres_30 == 6 ~ "20-29 fois",
     Nb_verres_30 == 7 ~ "30 fois ou plus",
     TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
   ))
-#je sais pas faire plus rapidement haha
+
