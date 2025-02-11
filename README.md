@@ -131,6 +131,25 @@ chisq.test(table_contingence6)
 
 --> khideux égal à 0.22 environ : pas de lien. 
 
+TEST KHIDEUX : conso cig père / age 1re cig enfant
+#conso cig pere / enfant
+pere_mere_age <-q[c(25, 70:71)]
+
+pere_mere_age <- pere_mere_age %>% 
+  mutate(Age_1re_cig = Q27B) %>% 
+  mutate(cig_mere = QA08A) %>% 
+  mutate(cig_pere = QA08B) 
+
+pere_mere_age <- pere_mere_age %>%
+  select(-all_of(c("Q27B","QA08A","QA08B")))
+
+age_cig_pere <-pere_mere_age[c(1,3)] %>%
+  filter(cig_pere!=4)
+
+table_contingence7 <-table(age_cig_pere)
+chisq.test(table_contingence7)
+
+#modalités pas encore regroupées mais pvalue = 0.01 : il existerait un lien
 
 ACM 
 
@@ -145,7 +164,7 @@ acm <- MCA(pere_mere_enf)
 # Affichage des résultats
 summary(acm) 
 
-flopesque : 20% de l'info résumée par l'axe 1 et le 2... on voit rien je crois...
+échec: 20% de l'info résumée par l'axe 1 et le 2... on voit rien je crois...
 
 
 POUR LA CONSO DE CIGARETTES 
