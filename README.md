@@ -98,6 +98,40 @@ Dans les deux cas, on a une p value très faible donc on en déduit l'existence 
 
 donc association pas dingue non plus...
 
+TEST KHIDEUX : conso tabac parents / enfant
+#1re clope / conso pere-mere
+#Q27B age col 25 / parent QA08A QA08B
+
+pere_mere_age <-q[c(25, 70:71)]
+
+pere_mere_age <- pere_mere_age %>% 
+  mutate(Age_1re_cig = Q27B) %>% 
+  mutate(cig_mere = QA08A) %>% 
+  mutate(cig_pere = QA08B) 
+
+pere_mere_age <- pere_mere_age %>%
+  select(-all_of(c("Q27B","QA08A","QA08B")))
+
+age_cig_mere <-pere_mere_age[,1:2] %>%
+  filter(cig_mere!=4)
+
+table_contingence6 <-table(age_cig_mere)
+chisq.test(table_contingence6)
+
+
+# ici on regroupe des modalités car elles étaient sous RPZ
+age_cig_mere <- age_cig_mere %>%
+  mutate(Age_1re_cig = case_when(
+    Age_1re_cig < 12 ~ "avant 12 ans",
+    Age_1re_cig >= 12 & Age_1re_cig <= 14 ~ "entre 12 et 14 ans",
+    Age_1re_cig > 14 ~ "après 14 ans"
+  ))
+table_contingence6 <-table(age_cig_mere)
+chisq.test(table_contingence6)
+
+--> khideux égal à 0.22 environ : pas de lien. 
+
+
 ACM 
 
 {r}
