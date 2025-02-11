@@ -49,7 +49,7 @@ pere_mere_enf <- pere_mere_enf %>%
   rename(Conso_mere = QA07A) %>% 
   rename(Conso_pere = QA07B)
 
-tab_peremereenf <- tab_peremereenf %>%
+pere_mere_enf <- pere_mere_enf %>%
   mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 1 ~ "0 fois",
     Nb_verres_30 == 2 ~ "1-2 fois",
