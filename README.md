@@ -198,3 +198,24 @@ table_contingence_cig2<-table(table_cig_pere)
 table_cig_pere
 chisq.test(table_contingence_cig2)
 
+
+
+sans les NA 
+q_sans_les_qcm <- toutes_les_q[c(4:14, 25, 27, 30:33, 35:37, 39)]
+# Convertir le résultat en data.frame pour ggplot
+
+na_count <- sapply(q_sans_les_qcm, function(x) sum(is.na(x)))
+
+na_count_df <- data.frame(
+  variable = names(na_count),
+  na_count = na_count
+)
+
+# Créer le graphique
+ggplot(na_count_df, aes(x = variable, y = na_count, fill = variable)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Nombre de NAs par variable", x = "Variable", y = "Nombre de NAs") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+
