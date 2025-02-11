@@ -23,19 +23,6 @@ tab_peremereenf <- tab_peremereenf %>%
   rename(Conso_pere = QA07B)
 
 
-tab_peremereenf <- tab_peremereenf %>%
-  mutate(Nb_verres_30 = case_when(
-    Nb_verres_30 == 1 ~ "0 fois",
-    Nb_verres_30 == 2 ~ "1-2 fois",
-    Nb_verres_30 == 3 ~ "3-5 fois",
-    Nb_verres_30 == 4 ~ "6-9 fois",
-    Nb_verres_30 == 5 ~ "10-19 fois",
-    Nb_verres_30 == 6 ~ "20-29 fois",
-    Nb_verres_30 == 7 ~ "30 fois ou plus",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-
-
 CAROOOOOOOOO 
   Projet Stat - 12/02
 
@@ -62,44 +49,17 @@ pere_mere_enf <- pere_mere_enf %>%
   rename(Conso_mere = QA07A) %>% 
   rename(Conso_pere = QA07B)
 
-pere_mere_enf <- pere_mere_enf %>%
+tab_peremereenf <- tab_peremereenf %>%
   mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 1 ~ "0 fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-
-pere_mere_enf <- pere_mere_enf %>%
-  mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 2 ~ "1-2 fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-pere_mere_enf <- pere_mere_enf %>%
-  mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 3 ~ "3-5 fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-
-pere_mere_enf <- pere_mere_enf %>%
-  mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 4 ~ "6-9 fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-pere_mere_enf <- pere_mere_enf %>%
-  mutate(Nb_verres_30 = case_when(
     Nb_verres_30 == 5 ~ "10-19 fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-pere_mere_enf <- pere_mere_enf %>%
-  mutate(Nb_verres_30 = case_when(
-    Nb_verres_30 == 6 ~ "20- 29fois",
-    TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
-  ))
-pere_mere_enf <- pere_mere_enf %>%
-  mutate(Nb_verres_30 = case_when(
+    Nb_verres_30 == 6 ~ "20-29 fois",
     Nb_verres_30 == 7 ~ "30 fois ou plus",
     TRUE ~ as.character(Nb_verres_30) # Conserve les autres valeurs
   ))
-
 
 Une fois que ce travail est fait, on scinde les tables pour effectuer 2 chideux différents : entre la conso mère/ nbr verres 30 de l'enfant et conso père/nbr verres. 
 
