@@ -147,3 +147,35 @@ summary(acm)
 
 flopesque : 20% de l'info résumée par l'axe 1 et le 2... on voit rien je crois...
 
+
+POUR LA CONSO DE CIGARETTES 
+
+cig_parent_enfant<- toutes_les_q[c(24 , 70:71)]
+
+cig_parent_enfant <- cig_parent_enfant%>% 
+  rename(Nb_cig_30 = Q27A) %>% 
+  rename(Conso_mere = QA08B) %>% 
+  rename(Conso_pere = QA08A)
+
+cig_parent_enfant <- cig_parent_enfant %>%
+  mutate(Nb_cig_30 = case_when(
+    Nb_cig_30 == 1 ~ "Aucune",
+    Nb_cig_30 == 2 ~ "Moins d'une par semaine",
+    Nb_cig_30 == 3 ~ "Moins d'une par semaine",
+    Nb_cig_30 == 4 ~ "Entre 1 à 5 par jour",
+    Nb_cig_30 == 5 ~ "Entre 6 et 20 par jour",
+    Nb_cig_30 == 6 ~ "Entre 6 et 20 par jour",
+    Nb_cig_30 == 7 ~ "Plus de 20 par jour",
+    TRUE ~ as.character(Nb_cig_30) # Conserve les autres valeurs
+  ))
+
+table_cig_mere <- cig_parent_enfant[c(1,3)]
+table_contingence_cig <-table(table_cig_mere)
+table_cig_mere
+chisq.test(table_contingence_cig)
+
+table_cig_pere<-cig_parent_enfant[c(1,2)]
+table_contingence_cig2<-table(table_cig_pere)
+table_cig_pere
+chisq.test(table_contingence_cig2)
+
