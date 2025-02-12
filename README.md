@@ -94,7 +94,8 @@ pere_enf <-pere_mere_enf[c(1,3)]%>%
 table_contingence2 <-table(pere_enf)
 chisq.test(table_contingence2)
 
-Dans les deux cas, on a une p value très faible donc on en déduit l'existence d'une dépendance. Essai de calcul du V de cramer qui donnait à peu près 0,15 pour la mère.
+Dans les deux cas, on a une p value très faible donc on en déduit l'existence d'une dépendance. 
+#Essai de calcul du V de cramer qui donnait à peu près 0,15 pour la mère.
 
 donc association pas dingue non plus...
 
