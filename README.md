@@ -227,7 +227,7 @@ profil_parents <- bdd[c("Q14A", "Q14B","q15a","q15b", "QA07A","QA07B", "QA08A", 
 #j'enlève les NA
 profil_parents_sans_na <- profil_parents %>% filter(!is.na(Q14A) & !is.na(Q14B))
 
-# Calcul des pourcentages pour Q14A et Q14B
+  # Calcul des pourcentages pour Q14A et Q14B
 q14a_counts <- profil_parents_sans_na %>%
   count(Q14A) %>%
   mutate(percentage = n / sum(n) * 100)
@@ -236,7 +236,7 @@ q14b_counts <- profil_parents_sans_na %>%
   count(Q14B) %>%
   mutate(percentage = n / sum(n) * 100)
 
-# Dictionnaire des significations
+  # Dictionnaire des significations
 significations <- c(
   "1" = "travaille",
   "2" = "chômage",
@@ -247,7 +247,7 @@ significations <- c(
   "7" = "décédé"
 )
 
-# Créer l'histogramme pour Q14A
+  # Créer l'histogramme pour Q14A
 ggplot(q14a_counts, aes(x = factor(Q14A), y = percentage)) +
   geom_bar(stat = "identity", fill = "skyblue") +
   geom_text(aes(label = paste0(round(percentage, 1), "%"), 
@@ -262,7 +262,7 @@ ggplot(q14a_counts, aes(x = factor(Q14A), y = percentage)) +
                 label = significations[as.character(Q14A)]), 
             size = 3, angle = 0, hjust = 0.5)
 
-# Créer l'histogramme pour Q14B
+  # Créer l'histogramme pour Q14B
 ggplot(q14b_counts, aes(x = factor(Q14B), y = percentage)) +
   geom_bar(stat = "identity", fill = "lightgreen") +
   geom_text(aes(label = paste0(round(percentage, 1), "%"), 
@@ -277,7 +277,7 @@ ggplot(q14b_counts, aes(x = factor(Q14B), y = percentage)) +
                 label = significations[as.character(Q14B)]), 
             size = 3, angle = 0, hjust = 0.5)
 
-# Calcul des pourcentages pour Q15A et Q15B
+  # Calcul des pourcentages pour Q15A et Q15B
 q15a_counts <- profil_parents_sans_na %>%
   count(q15a) %>%
   mutate(percentage = n / sum(n) * 100)
@@ -286,7 +286,7 @@ q15b_counts <- profil_parents_sans_na %>%
   count(q15b) %>%
   mutate(percentage = n / sum(n) * 100)
 
-# Dictionnaire des significations
+  # Dictionnaire des significations
 significations <- c(
   "1" = "Agriculteur.e",
   "2" = "artisan.e, commerçant.e, chef.fe petite entreprise",
@@ -299,7 +299,7 @@ significations <- c(
   "9" = "je ne sais pas"
 )
 
-# Créer l'histogramme pour Q15A
+  # Créer l'histogramme pour Q15A
 ggplot(q15a_counts, aes(x = factor(q15a), y = percentage)) +
   geom_bar(stat = "identity", fill = "skyblue") +
   geom_text(aes(label = paste0(round(percentage, 1), "%"), 
@@ -314,7 +314,7 @@ ggplot(q15a_counts, aes(x = factor(q15a), y = percentage)) +
                 label = significations[as.character(q15a)]), 
             size = 3, angle = 0, hjust = 0.5)
 
-# Créer l'histogramme pour Q15B
+  # Créer l'histogramme pour Q15B
 ggplot(q15b_counts, aes(x = factor(q15b), y = percentage)) +
   geom_bar(stat = "identity", fill = "lightpink") +
   geom_text(aes(label = paste0(round(percentage, 1), "%"), 
