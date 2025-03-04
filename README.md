@@ -314,7 +314,7 @@ ggplot(q15a_counts, aes(x = factor(q15a), y = percentage)) +
                 label = significations[as.character(q15a)]), 
             size = 3, angle = 0, hjust = 0.5)
 
-  # Créer l'histogramme pour Q15B
+  ## Créer l'histogramme pour Q15B
 ggplot(q15b_counts, aes(x = factor(q15b), y = percentage)) +
   geom_bar(stat = "identity", fill = "lightpink") +
   geom_text(aes(label = paste0(round(percentage, 1), "%"), 
