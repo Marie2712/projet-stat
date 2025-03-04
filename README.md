@@ -227,4 +227,52 @@ profil_parents <- bdd[c("Q14A", "Q14B","q15a","q15b", "QA07A","QA07B", "QA08A", 
 #j'enlève les NA
 profil_parents_sans_na <- profil_parents %>% filter(!is.na(Q14A) & !is.na(Q14B))
 
+# Calcul des pourcentages pour Q14A et Q14B
+q14a_counts <- profil_parents_sans_na %>%
+  count(Q14A) %>%
+  mutate(percentage = n / sum(n) * 100)
 
+q14b_counts <- profil_parents_sans_na %>%
+  count(Q14B) %>%
+  mutate(percentage = n / sum(n) * 100)
+
+# Dictionnaire des significations
+significations <- c(
+  "1" = "travaille",
+  "2" = "chômage",
+  "3" = "au foyer",
+  "4" = "invalide",
+  "5" = "retraité",
+  "6" = "je ne sais pas",
+  "7" = "décédé"
+)
+
+# Créer l'histogramme pour Q14A
+ggplot(q14a_counts, aes(x = factor(Q14A), y = percentage)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_text(aes(label = paste0(round(percentage, 1), "%"), 
+                vjust = -1.5)) +
+  scale_x_discrete(name = "Valeurs") +
+  ylab("Pourcentage (%)") +
+  ggtitle("Répartition des réponses Q14A") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(data = q14a_counts, 
+            aes(x = factor(Q14A), y = percentage + 2, 
+                label = significations[as.character(Q14A)]), 
+            size = 3, angle = 0, hjust = 0.5)
+
+# Créer l'histogramme pour Q14B
+ggplot(q14b_counts, aes(x = factor(Q14B), y = percentage)) +
+  geom_bar(stat = "identity", fill = "lightgreen") +
+  geom_text(aes(label = paste0(round(percentage, 1), "%"), 
+                vjust = -1.5)) +
+  scale_x_discrete(name = "Valeurs") +
+  ylab("Pourcentage (%)") +
+  ggtitle("Répartition des réponses Q14B") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(data = q14b_counts, 
+            aes(x = factor(Q14B), y = percentage + 2, 
+                label = significations[as.character(Q14B)]), 
+            size = 3, angle = 0, hjust = 0.5)
