@@ -254,7 +254,7 @@ ggplot(q14a_counts, aes(x = factor(Q14A), y = percentage)) +
                 vjust = -1.5)) +
   scale_x_discrete(name = "Valeurs") +
   ylab("Pourcentage (%)") +
-  ggtitle("Répartition des réponses Q14A") +
+  ggtitle("situation du père") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   geom_text(data = q14a_counts, 
@@ -269,7 +269,7 @@ ggplot(q14b_counts, aes(x = factor(Q14B), y = percentage)) +
                 vjust = -1.5)) +
   scale_x_discrete(name = "Valeurs") +
   ylab("Pourcentage (%)") +
-  ggtitle("Répartition des réponses Q14B") +
+  ggtitle("situation de la mère") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   geom_text(data = q14b_counts, 
