@@ -13,7 +13,7 @@ dico_var <- read.csv("dico.csv")
 toutes_les_rep <- dico_var[c(3:5, 18:21, 37:58, 154:230, 378:508, 698:721 ), c(1:4)]
 toutes_les_q <- bdd[c(4, 6:7, 13:22 , 61:85, 142:181 , 231:234)]
 
-#DDER POUR FUSIONNER P7RE M7RE , QAO7 et Q35 
+#DDER POUR FUSIONNER PERE MERE , QAO7 et Q35 
 
 tab_peremereenf <- toutes_les_q[c(35, 68:69)]
 
@@ -218,5 +218,13 @@ ggplot(na_count_df, aes(x = variable, y = na_count, fill = variable)) +
   theme_minimal() +
   labs(title = "Nombre de NAs par variable", x = "Variable", y = "Nombre de NAs") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  
+
+# table pour le profil des parents 
+
+# j'isole les variables qui m'intéresse
+profil_parents <- bdd[c("Q14A", "Q14B","q15a","q15b", "QA07A","QA07B", "QA08A", "QA08B", "QA09", "QA11A", "QA11B", "QA11C", "QA11D")]
+
+# j'enlève les NA
+profil_parents_sans_na <- profil_parents %>% filter(!is.na(Q14A) & !is.na(Q14B))
+
 
