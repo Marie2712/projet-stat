@@ -328,3 +328,208 @@ ggplot(q15b_counts, aes(x = factor(q15b), y = percentage)) +
             aes(x = factor(q15b), y = percentage + 2, 
                 label = significations[as.character(q15b)]), 
             size = 3, angle = 0, hjust = 0.5)
+
+
+# age moyen 
+
+prof_enfant <- dico_var[c(3:5, 18:25, 31:58, 154:181, 203:233, 378:297 ), c(1:4)] 
+prof_enfantbdd <- bdd[c(4, 6:22, 61:72, 79:87 , 142:145)]
+
+
+prof_enfant_dico <- bdd[c(4)]
+prof_enfant_bdd <- prof_enfant[ c(1:3), c(1:3)]
+
+compte_occurrences <- prof_enfant_dico %>%
+  count(Q01) %>% 
+  rename( Modalite = Q01) %>% 
+  rename(nb_occ = n)
+
+resultat_age <- merge(compte_occurrences, prof_enfant_bdd, by = "Modalite")
+
+resultat_age_df <- as.data.frame(resultat_age)
+
+ggplot(resultat_age_df, aes(x = Modalite, y = nb_occ)) + 
+  geom_bar(stat = "identity", fill = "blue") + 
+  labs(title = "Nombre d'occurrences pour chaque modalité", 
+       x = "Modalité", 
+       y = "Nombre d'occurrence") +
+  theme_minimal()
+
+
+#Calcul des pourcentages
+resultat_age_df <- resultat_age_df %>%
+  mutate(pourcentage = nb_occ / sum(nb_occ) * 100)
+
+#creation histogramme pourcentagez
+ggplot(resultat_age_df, aes(x = Modalite, y = pourcentage)) + 
+  geom_bar(stat = "identity", fill = "blue") + 
+  labs(title = "Distribution en pourcentage des modalités", 
+       x = "Modalité", 
+       y = "Pourcentage (%)") +
+  theme_minimal()
+
+
+#Création du graphique en camembert
+ggplot(resultat_age_df, aes(x = "", y = nb_occ, fill = Modalite)) + 
+  geom_bar(stat = "identity", width = 1) + 
+  coord_polar(theta = "y") + 
+  geom_text(aes(label = paste0(round(pourcentage, 1), "%")), 
+            position = position_stack(vjust = 0.5)) + 
+  labs(title = "Répartition des années", 
+       x = "Choix", 
+       y = "Nombre d'occurrences") +
+  theme_void()
+
+#questions sur l'alcool 
+
+alcool_bdd <- bdd[c(79:85)]
+alcool_dico <- dico_var[c(203:230), c(1:4)]
+
+# Question sur si la personne a déja été ivre 
+
+ivre_ <- alcool_dico[c(19:20), c(1:4)]
+occu_bdd <- alcool_bdd %>% 
+  select(5)%>%
+  filter(!is.na(Q36))
+
+
+ivre_occu <- occu_bdd %>% 
+  count(Q36) %>% 
+  rename(oui_non = Q36) %>% 
+  rename(Modalite = n)
+
+ivre_occu <- ivre_occu %>%
+  mutate(oui_non = ifelse(oui_non == "1", "Oui", oui_non)) %>% 
+  mutate(oui_non = ifelse(oui_non == "2", "Non", oui_non))
+
+
+ggplot(ivre_occu, aes(x = oui_non, y = Modalite, fill = oui_non)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Est ce que le jeune a déjà été ivre dans sa vie",
+       x = "Réponse",
+       y = "Nombre d'occurrences") +
+  theme_minimal() +
+  scale_fill_manual(values = c("Oui" = "lightblue", "Non" = "lightgreen"))
+
+library(ggplot2)
+library(dplyr)
+
+# Calculer les pourcentages
+ivre_occu <- ivre_occu %>%
+  mutate(pourcentage = Modalite / sum(Modalite) * 100)
+
+# Création de l'histogramme des pourcentages
+ggplot(ivre_occu, aes(x = oui_non, y = pourcentage, fill = oui_non)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Pourcentage des jeunes ayant déjà été ivres",
+       x = "Réponse",
+       y = "Pourcentage (%)") +
+  theme_minimal() +
+  scale_fill_manual(values = c("Oui" = "lightblue", "Non" = "lightgreen")) +
+  geom_text(aes(label = paste0(round(pourcentage, 1), "%")), vjust = -0.5)  # Ajout des pourcentages sur les barres
+
+# Créer le graphique en camembert avec les pourcentages
+ggplot(ivre_occu, aes(x = "", y = Modalite, fill = oui_non)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +
+  labs(title = "Est-ce que le jeune a déjà été ivre dans sa vie",
+       x = NULL,  # Enlever le label de l'axe x
+       y = NULL) +  # Enlever le label de l'axe y
+  theme_void() +  # Pour enlever les axes et le fond
+  scale_fill_manual(values = c("Oui" = "lightblue", "Non" = "lightgreen")) +
+  geom_text(aes(label = paste0(round(pourcentage, 1), "%")),  # Afficher les pourcentages
+            position = position_stack(vjust = 0.5),  # Positionner le texte au centre de chaque segment
+            color = "white",  # Couleur du texte
+            size = 6)
+
+
+# age de la première fois où vous avez été ivre
+#table pour le profil des parents 
+
+#j'isole la variable qui m'interesse
+age_ivresse <- bdd[c("Q36A")]
+
+#j'enlève les NA
+age_ivresse_sans_NA <- age_ivresse %>% filter(!is.na(Q36A))
+
+#je compte les modalités
+compte_modalites <- age_ivresse_sans_NA %>%
+  count(Q36A) %>%
+  rename(Modalite = Q36A, Nb_Occurrences = n)
+
+#on corrige les valeurs impossibles 
+compte_modalites <- compte_modalites %>%
+  filter(Modalite >5 & Modalite <= 19)
+
+#histogramme
+ggplot(compte_modalites, aes(x = Modalite, y = Nb_Occurrences, fill = factor(Modalite))) +
+  geom_bar(stat = "identity") +  
+  labs(title = "Histogramme des modalités filtrées et de leur nombre d'occurrences",
+       x = "age", 
+       y = "Nombre d'occurrences") +
+  theme_minimal()
+
+#pourcentage age ivresse
+compte_modalites <- compte_modalites %>%
+  mutate(pourcentage = (Nb_Occurrences / sum(Nb_Occurrences)) * 100)
+
+#Création de l'histogramme avec les pourcentages
+ggplot(compte_modalites, aes(x = Modalite, y = pourcentage, fill = factor(Modalite))) +
+  geom_bar(stat = "identity") +  
+  labs(title = "Histogramme des modalités filtrées et de leur pourcentage",
+       x = "age", 
+       y = "Pourcentage (%)") +
+  theme_minimal() +
+  geom_text(aes(label = paste0(round(pourcentage, 1), "%")), vjust = -0.5)  # Affiche les pourcentages sur les barres
+
+# on-t-il déjà fumé 
+question_tabac<-bdd[c("Q26A1","Q26B1","Q26C1","Q26D1","Q26E1")]
+
+#on veut regrouper les questions
+
+question_tabac_transformed <- question_tabac %>%
+  mutate(across(everything(), ~ case_when(
+    . == "1" ~ 0,       # Transforme "1" en 0
+    . %in% c("2", "3") ~ 1,  # Transforme "2" et "3" en 1
+    TRUE ~ as.numeric(.)  )))%>%
+  mutate(somme_tabac = rowSums(., na.rm = TRUE))
+
+question_tabac_transformed <- question_tabac_transformed %>%
+  mutate(consommation_tabac = case_when(
+    somme_tabac == 0 ~ "pas de consommation de tabac",  # Si somme_tabac est égal à 0
+    somme_tabac >= 1 ~ "a déjà consommé du tabac"       # Si somme_tabac est supérieur ou égal à 1
+  ))
+#histogramme
+ggplot(question_tabac_transformed, aes(x = consommation_tabac, fill = consommation_tabac)) +
+  geom_bar(stat = "count", show.legend = FALSE) + # stat = "count" pour compter les occurrences
+  labs(title = "Répartition de la consommation de tabac", 
+       x = "Consommation de tabac", 
+       y = "Nombre d'individus") +
+  scale_fill_manual(values = c("pas de consommation de tabac" = "lightgreen", 
+                               "a déjà consommé du tabac" = "lightblue")) + 
+  theme_minimal()
+
+#pourcentage
+question_tabac_transformed <- question_tabac_transformed %>%
+  mutate(consommation_tabac = factor(consommation_tabac, levels = c("pas de consommation de tabac", "a déjà consommé du tabac")))
+
+question_tabac_pourcentage <- question_tabac_transformed %>%
+  mutate(consommation_tabac = case_when(
+    somme_tabac == 0 ~ "pas de consommation de tabac",  # Si somme_tabac est égal à 0
+    somme_tabac >= 1 ~ "a déjà consommé du tabac"       # Si somme_tabac est supérieur ou égal à 1
+  )) %>%
+  count(consommation_tabac) %>%  # Compter le nombre d'occurrences de chaque modalité
+  mutate(pourcentage = n / sum(n) * 100) 
+
+#Créer l'histogramme avec pourcentages
+ggplot(question_tabac_pourcentage, aes(x = consommation_tabac, y = pourcentage, fill = consommation_tabac)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +  # Utilisez stat = "identity" pour afficher les pourcentages
+  labs(title = "Répartition de la consommation de tabac (%)", 
+       x = "Consommation de tabac", 
+       y = "Pourcentage d'individus") +
+  scale_fill_manual(values = c("pas de consommation de tabac" = "lightgreen", 
+                               "a déjà consommé du tabac" = "lightblue")) + 
+  theme_minimal() +
+  geom_text(aes(label = paste0(round(pourcentage, 1), "%")), 
+            vjust = -0.5, size = 5)  # Afficher les pourcentages sur les barres
+
