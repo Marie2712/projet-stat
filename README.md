@@ -159,7 +159,8 @@ library(FactoMineR)
 library(factoextra)
 library(ggplot2)
 
-# Réalisation de l'ACM : NUL 20% 
+# Réalisation de l'ACM 
+NUL 20% 
 acm <- MCA(pere_mere_enf)
 
 # Affichage des résultats
@@ -199,10 +200,9 @@ table_contingence_cig2<-table(table_cig_pere)
 table_cig_pere
 chisq.test(table_contingence_cig2)
 
-
-
 sans les NA 
 q_sans_les_qcm <- toutes_les_q[c(4:14, 25, 27, 30:33, 35:37, 39)]
+
 # Convertir le résultat en data.frame pour ggplot
 
 na_count <- sapply(q_sans_les_qcm, function(x) sum(is.na(x)))
@@ -221,10 +221,10 @@ ggplot(na_count_df, aes(x = variable, y = na_count, fill = variable)) +
 
 # table pour le profil des parents 
 
-# j'isole les variables qui m'intéresse
+#j'isole les variables qui m'intéresse
 profil_parents <- bdd[c("Q14A", "Q14B","q15a","q15b", "QA07A","QA07B", "QA08A", "QA08B", "QA09", "QA11A", "QA11B", "QA11C", "QA11D")]
 
-# j'enlève les NA
+#j'enlève les NA
 profil_parents_sans_na <- profil_parents %>% filter(!is.na(Q14A) & !is.na(Q14B))
 
 
