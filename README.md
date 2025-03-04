@@ -276,3 +276,55 @@ ggplot(q14b_counts, aes(x = factor(Q14B), y = percentage)) +
             aes(x = factor(Q14B), y = percentage + 2, 
                 label = significations[as.character(Q14B)]), 
             size = 3, angle = 0, hjust = 0.5)
+
+# Calcul des pourcentages pour Q15A et Q15B
+q15a_counts <- profil_parents_sans_na %>%
+  count(q15a) %>%
+  mutate(percentage = n / sum(n) * 100)
+
+q15b_counts <- profil_parents_sans_na %>%
+  count(q15b) %>%
+  mutate(percentage = n / sum(n) * 100)
+
+# Dictionnaire des significations
+significations <- c(
+  "1" = "Agriculteur.e",
+  "2" = "artisan.e, commerçant.e, chef.fe petite entreprise",
+  "3" = "chef.fe d'entreprise",
+  "4" = "cadre, professeur.e, profession libérale",
+  "5" = "profession intermédiaire",
+  "6" = "employé.e",
+  "7" = "ouvrier.e",
+  "8" = "sans profession",
+  "9" = "je ne sais pas"
+)
+
+# Créer l'histogramme pour Q15A
+ggplot(q15a_counts, aes(x = factor(q15a), y = percentage)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_text(aes(label = paste0(round(percentage, 1), "%"), 
+                vjust = -1.5)) +
+  scale_x_discrete(name = "Valeurs") +
+  ylab("Pourcentage (%)") +
+  ggtitle("profession du père") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(data = q15a_counts, 
+            aes(x = factor(q15a), y = percentage + 2, 
+                label = significations[as.character(q15a)]), 
+            size = 3, angle = 0, hjust = 0.5)
+
+# Créer l'histogramme pour Q15B
+ggplot(q15b_counts, aes(x = factor(q15b), y = percentage)) +
+  geom_bar(stat = "identity", fill = "lightpink") +
+  geom_text(aes(label = paste0(round(percentage, 1), "%"), 
+                vjust = -3)) +
+  scale_x_discrete(name = "Valeurs") +
+  ylab("Pourcentage (%)") +
+  ggtitle("profession de la mère") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(data = q15b_counts, 
+            aes(x = factor(q15b), y = percentage + 2, 
+                label = significations[as.character(q15b)]), 
+            size = 3, angle = 0, hjust = 0.5)
