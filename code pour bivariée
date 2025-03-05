@@ -1,3 +1,16 @@
+library(dplyr)
+library(DataExplorer)
+library(FactoMineR)
+library(factoextra)
+library(corrplot)
+
+
+
+getwd()
+setwd("C:/Users/jadep/OneDrive/Documents/1AENSAI/projet stat")
+rm(list=ls())
+
+
 bdd <- read.csv("bdd_2022 (1).csv", sep =";")
 dico_var <- read.csv("dico.csv")
 
@@ -121,6 +134,41 @@ ggplot(tab_perenf_summary, aes(x = factor(QA07A), y = total, fill = factor(Q35, 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
+
+#Pour la consommation de tabac 
+#lien entre si les pernets et enfents fument QAO8 et Q27
+
+
+bdd <- read.csv("bdd_2022 (1).csv", sep =";")
+dico_var <- read.csv("dico.csv")
+
+#on fait une table avec seulement les infos qui nous intéressent
+
+q_imp <- bdd[c(71, 173:174)]
+
+#analyse univariée 
+age_deb <- bdd[c(72)]
+
+sum(is.na(age_deb))
+mean(is.na(age_deb)) * 100
+
+age_deb <- age_deb %>% 
+  filter(!is.na(age_deb)) %>% 
+  count(Q27B)
+#Je garde que de 10 à 19 parce que avant c'est pas très crédible, et après imp
+
+age_deb<- age_deb %>% 
+  filter(!Q27B %in% c(0, 1, 5, 6, 7, 8, 9, 25, 26, 27))
+
+library(ggplot2)
+
+ggplot(age_deb, aes(x = factor(Q27B), y = n)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(title = "Âge de début du tabagisme chez les jeunes",
+       x = "Âge de début",
+       y = "Nombre de jeunes") +
+  theme_minimal()
+
 #on reprend l'analyse bivariée 
 
 q_imp <- bdd[c(71, 173:174)]
@@ -136,112 +184,183 @@ q_imp <- q_imp %>%
          ))
 
 #on se penche sur le cas de la mère 
-
-
+# Préparation des données
 tab_mer <- toutes_les_q %>% 
   filter(!is.na(Q27A), !is.na(QA08B)) %>% 
   mutate(
-    # Modifier les valeurs de Q27A
     Q27A = ifelse(Q27A == 5, 4, Q27A),
     Q27A = ifelse(Q27A == 6, 5, Q27A),
-    # Si nécessaire, ajouter des transformations pour QA08B, mais pas dans Q27A
-    QA08B = ifelse(QA08B == 3, 2, QA08B)
   ) %>% 
-  group_by(Q27A, QA08B) %>% 
-  summarise(total = sum(Q27A, na.rm = TRUE))
+  group_by(QA08B, Q27A) %>% 
+  summarise(total = n(), .groups = "drop") %>%
+  group_by(QA08B) %>%
+  mutate(pourcentage = total / sum(total) * 100)  # Calcul des pourcentages
 
-tab_mer <-tab_mer%>%
-  mutate(QA08B = as.character(QA08B),
-         QA08B = case_when(
-           QA08B == "1" ~ "Non",
-           QA08B == "2" ~ "Oui, parfois",
-           QA08B == "3" ~ "Oui, Tous les jours ",
-           QA08B == "4" ~ "Non concerné(e)",
-           TRUE ~ QA08B                      
-         ))
-
+# Transformation des modalités en texte (sans "Non concerné(e)")
 tab_mer <- tab_mer %>%
-  mutate(QA08B = factor(QA08B, levels = c("Oui, parfois", "Non", "Non concerné(e)")))
+  mutate(QA08B = case_when(
+    QA08B == 1 ~ "Non",
+    QA08B == 2 ~ "Oui, parfois",
+    QA08B == 3 ~ "Oui, Tous les jours",
+    TRUE ~ as.character(QA08B)
+  )) %>%
+  filter(QA08B %in% c("Oui, parfois", "Non", "Oui, Tous les jours")) %>%  # Suppression de "Non concerné(e)"
+  mutate(QA08B = factor(QA08B, levels = c("Oui, parfois", "Non", "Oui, Tous les jours")),
+         Q27A = factor(Q27A, labels = c("aucune", "moins d'une fois par semaine", 
+                                        "moins d'une fois par jour", "1-10", 
+                                        "11-20", "20 et plus")))
 
-ggplot(tab_mer, aes(x = factor(QA08B), y = total, fill = factor(Q27A, labels = c("aucune", "moins d'une fois par semaine", "moins d'une fois par jour", "1-10", "11-20", "20 et plus")))) +
+# Création du graphique avec pourcentages
+ggplot(tab_mer, aes(x = QA08B, y = pourcentage, fill = Q27A)) +
   geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = paste0(round(pourcentage, 1), "%")), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5, 
+            color = "black", 
+            size = 3, 
+            fontface = "bold") + 
   labs(title = "Tabagisme du jeune selon la consommation de la mère",
        x = "Fréquence à laquelle fume la mère", 
-       y = "Effectif ayant répondu",
+       y = "Pourcentage",
        fill = "Nombre de cigarettes consommées par le jeune durant le mois") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(labels = percent_format(scale = 1))
 
 #pour le père 
 
+library(ggplot2)
+library(dplyr)
+library(scales)
+
+# Préparation des données
 tab_per <- toutes_les_q %>% 
   filter(!is.na(Q27A), !is.na(QA08A)) %>% 
   mutate(
-    # Modifier les valeurs de Q27A
     Q27A = ifelse(Q27A == 5, 4, Q27A),
-    Q27A = ifelse(Q27A == 6, 5, Q27A),
-    # Si nécessaire, ajouter des transformations pour QA08A, mais pas dans Q27A
-    QA08A = ifelse(QA08A == 3, 2, QA08A)
+    Q27A = ifelse(Q27A == 6, 5, Q27A)
   ) %>% 
-  group_by(Q27A, QA08A) %>% 
-  summarise(total = sum(Q27A, na.rm = TRUE))
+  group_by(QA08A, Q27A) %>% 
+  summarise(total = n(), .groups = "drop") %>%
+  group_by(QA08A) %>%
+  mutate(pourcentage = total / sum(total) * 100)  # Calcul des pourcentages
 
+# Transformation des modalités en texte (sans "Non concerné(e)")
 tab_per <- tab_per %>%
-  mutate(QA08A = as.character(QA08A),
-         QA08A = case_when(
-           QA08A == "1" ~ "Non",
-           QA08A == "2" ~ "Oui, parfois",
-           QA08A == "3" ~ "Oui, Tous les jours ",
-           QA08A == "4" ~ "Non concerné(e)",
-           TRUE ~ QA08A                      
-         ))
+  mutate(QA08A = case_when(
+    QA08A == 1 ~ "Non",
+    QA08A == 2 ~ "Oui, parfois",
+    QA08A == 3 ~ "Oui, Tous les jours",
+    TRUE ~ as.character(QA08A)
+  )) %>%
+  filter(QA08A %in% c("Oui, parfois", "Non", "Oui, Tous les jours")) %>%  # Suppression de "Non concerné(e)"
+  mutate(QA08A = factor(QA08A, levels = c("Oui, parfois", "Non", "Oui, Tous les jours")),
+         Q27A = factor(Q27A, labels = c("aucune", "moins d'une fois par semaine", 
+                                        "moins d'une fois par jour", "1-10", 
+                                        "11-20", "20 et plus")))
 
-tab_per <- tab_per %>%
-  mutate(QA08A = factor(QA08A, levels = c("Oui, parfois", "Non", "Non concerné(e)")))
-
-ggplot(tab_mer, aes(x = factor(QA08A), y = total, fill = factor(Q27A, labels = c("aucune", "moins d'une fois par semaine", "moins d'une fois par jour", "1-10", "11-20", "20 et plus")))) +
+# Création du graphique avec pourcentages
+ggplot(tab_per, aes(x = QA08A, y = pourcentage, fill = Q27A)) +
   geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = paste0(round(pourcentage, 1), "%")), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5, 
+            color = "black", 
+            size = 3, 
+            fontface = "bold") + 
   labs(title = "Tabagisme du jeune selon la consommation du père",
        x = "Fréquence à laquelle fume le père", 
-       y = "Effectif ayant répondu",
+       y = "Pourcentage",
        fill = "Nombre de cigarettes consommées par le jeune durant le mois") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(labels = percent_format(scale = 1))
+#maintenant on va comparer la consomation de canabis et celle de fumer des darons 
 
-#test 
+#avec la consommation de la mère 
 
-tab_per <- toutes_les_q %>% 
-  filter(!is.na(Q27A), !is.na(QA08A)) %>% 
+
+
+
+
+
+# Préparation des données
+canab_mer <- bdd %>% 
+  filter(!is.na(Q42), !is.na(QA08B)) %>% 
   mutate(
-    # Modifier les valeurs de Q27A
-    Q27A = ifelse(Q27A == 5, 4, Q27A),
-    Q27A = ifelse(Q27A == 6, 5, Q27A),
-    # Modifier QA08A si nécessaire
-    QA08A = ifelse(QA08A == 3, 2, QA08A)
+    Q42 = ifelse(Q42 == 4, 3, Q42),
+    Q42 = ifelse(Q42 == 7, 6, Q42)
   ) %>% 
-  group_by(Q27A, QA08A) %>% 
-  summarise(total = n(), .groups = "drop")  # Utilisation de n() pour compter les occurrences
+  group_by(QA08B, Q42) %>% 
+  summarise(total = n(), .groups = "drop") %>%
+  group_by(QA08B) %>%
+  mutate(pourcentage = total / sum(total) * 100)  # Calcul des pourcentages
 
-# Transformer QA08A en facteur avec les bonnes étiquettes
-tab_per <- tab_per %>%
-  mutate(QA08A = as.character(QA08A),
-         QA08A = case_when(
-           QA08A == "1" ~ "Non",
-           QA08A == "2" ~ "Oui, parfois",
-           QA08A == "3" ~ "Oui, Tous les jours ",
-           QA08A == "4" ~ "Non concerné(e)",
-           TRUE ~ QA08A                      
-         ))
+# Transformation des modalités en texte (sans "Non concerné(e)")
+canab_mer <- canab_mer %>%
+  mutate(QA08B = case_when(
+    QA08B == 1 ~ "Non",
+    QA08B == 2 ~ "Oui, parfois",
+    QA08B == 3 ~ "Oui, Tous les jours",
+    TRUE ~ as.character(QA08B)
+  )) %>%
+  filter(QA08B %in% c("Oui, parfois", "Non", "Oui, Tous les jours")) %>%  # Suppression de "Non concerné(e)"
+  mutate(QA08B = factor(QA08B, levels = c("Oui, parfois", "Non", "Oui, Tous les jours")),
+         Q42 = factor(Q42, labels = c("0 fois", "1-2 fois", "3-9", "10-19", "20 et plus")))
 
-# Assurez-vous que QA08A est un facteur avec l'ordre spécifié
-tab_per <- tab_per %>%
-  mutate(QA08A = factor(QA08A, levels = c("Oui, parfois", "Non", "Non concerné(e)")))
-
-# Création du graphique
-ggplot(tab_per, aes(x = QA08A, y = total, fill = factor(Q27A, labels = c("aucune", "moins d'une fois par semaine", "moins d'une fois par jour", "1-10", "11-20", "20 et plus")))) +
+# Création du graphique avec pourcentages
+ggplot(canab_mer, aes(x = QA08B, y = pourcentage, fill = Q42)) +
   geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Tabagisme du jeune selon la consommation du père",
-       x = "Fréquence à laquelle fume le père", 
-       y = "Effectif ayant répondu",
-       fill = "Nombre de cigarettes consommées par le jeune durant le mois") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_text(aes(label = paste0(round(pourcentage, 1), "%")), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5, 
+            color = "black", 
+            size = 3, 
+            fontface = "bold") + 
+  labs(title = "Consommation de cannabis du jeune selon le tabagisme de la mère",
+       x = "Fréquence de consommation de cigarette de la mère", 
+       y = "Pourcentage",
+       fill = "Fréquence de consommation de cannabis par le jeune au cours du mois") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(labels = percent_format(scale = 1))
 
+
+#et du coté du père 
+
+# Préparation des données
+canab_per <- bdd %>% 
+  filter(!is.na(Q42), !is.na(QA08A)) %>% 
+  mutate(
+    Q42 = ifelse(Q42 == 4, 3, Q42),
+    Q42 = ifelse(Q42 == 7, 6, Q42),
+  ) %>% 
+  group_by(QA08A, Q42) %>% 
+  summarise(total = n(), .groups = "drop") %>%
+  group_by(QA08A) %>%
+  mutate(pourcentage = total / sum(total) * 100)  # Calcul des pourcentages
+
+# Transformation des modalités en texte (sans "Non concerné(e)")
+canab_per <- canab_per %>%
+  mutate(QA08A = case_when(
+    QA08A == 1 ~ "Non",
+    QA08A == 2 ~ "Oui, parfois",
+    QA08A == 3 ~ "Oui, Tous les jours",
+    TRUE ~ as.character(QA08A)
+  )) %>%
+  filter(QA08A %in% c("Oui, parfois", "Non", "Oui, Tous les jours")) %>%  # Suppression de "Non concerné(e)"
+  mutate(QA08A = factor(QA08A, levels = c("Oui, parfois", "Non", "Oui, Tous les jours")),
+         Q42 = factor(Q42, labels = c("0 fois", "1-2 fois", "3-9", "10-19", "20 et plus")))
+
+# Création du graphique avec pourcentages
+ggplot(canab_per, aes(x = QA08A, y = pourcentage, fill = Q42)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = paste0(round(pourcentage, 1), "%")), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5, 
+            color = "black", 
+            size = 3, 
+            fontface = "bold") + 
+  labs(title = "Consommation de cannabis du jeune selon le tabagisme du père",
+       x = "Fréquence de consommation de cigarette du père", 
+       y = "Pourcentage",
+       fill = "Fréquence de consommation de cannabis par le jeune au cours du mois") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(labels = percent_format(scale = 1))
