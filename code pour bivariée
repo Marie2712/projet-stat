@@ -119,3 +119,129 @@ ggplot(tab_perenf_summary, aes(x = factor(QA07A), y = total, fill = factor(Q35, 
        y = "Effectif ayant répondu",
        fill = "Nombre de verre consommé par le jeune durant le mois") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+#on reprend l'analyse bivariée 
+
+q_imp <- bdd[c(71, 173:174)]
+
+#Je commence par coller les variable, et enlever les NA
+
+q_imp <- q_imp %>% 
+  filter(!is.na(Q27A), !is.na(QA08A), !is.na(QA08B)) %>% 
+  mutate(Q27A = as.character(Q27A),
+         Q27A = case_when(
+           Q27A == "5" ~ "4",       # Change "5" en "4"
+           TRUE ~ Q27A              # Conserve les autres valeurs
+         ))
+
+#on se penche sur le cas de la mère 
+
+
+tab_mer <- toutes_les_q %>% 
+  filter(!is.na(Q27A), !is.na(QA08B)) %>% 
+  mutate(
+    # Modifier les valeurs de Q27A
+    Q27A = ifelse(Q27A == 5, 4, Q27A),
+    Q27A = ifelse(Q27A == 6, 5, Q27A),
+    # Si nécessaire, ajouter des transformations pour QA08B, mais pas dans Q27A
+    QA08B = ifelse(QA08B == 3, 2, QA08B)
+  ) %>% 
+  group_by(Q27A, QA08B) %>% 
+  summarise(total = sum(Q27A, na.rm = TRUE))
+
+tab_mer <-tab_mer%>%
+  mutate(QA08B = as.character(QA08B),
+         QA08B = case_when(
+           QA08B == "1" ~ "Non",
+           QA08B == "2" ~ "Oui, parfois",
+           QA08B == "3" ~ "Oui, Tous les jours ",
+           QA08B == "4" ~ "Non concerné(e)",
+           TRUE ~ QA08B                      
+         ))
+
+tab_mer <- tab_mer %>%
+  mutate(QA08B = factor(QA08B, levels = c("Oui, parfois", "Non", "Non concerné(e)")))
+
+ggplot(tab_mer, aes(x = factor(QA08B), y = total, fill = factor(Q27A, labels = c("aucune", "moins d'une fois par semaine", "moins d'une fois par jour", "1-10", "11-20", "20 et plus")))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Tabagisme du jeune selon la consommation de la mère",
+       x = "Fréquence à laquelle fume la mère", 
+       y = "Effectif ayant répondu",
+       fill = "Nombre de cigarettes consommées par le jeune durant le mois") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+
+#pour le père 
+
+tab_per <- toutes_les_q %>% 
+  filter(!is.na(Q27A), !is.na(QA08A)) %>% 
+  mutate(
+    # Modifier les valeurs de Q27A
+    Q27A = ifelse(Q27A == 5, 4, Q27A),
+    Q27A = ifelse(Q27A == 6, 5, Q27A),
+    # Si nécessaire, ajouter des transformations pour QA08A, mais pas dans Q27A
+    QA08A = ifelse(QA08A == 3, 2, QA08A)
+  ) %>% 
+  group_by(Q27A, QA08A) %>% 
+  summarise(total = sum(Q27A, na.rm = TRUE))
+
+tab_per <- tab_per %>%
+  mutate(QA08A = as.character(QA08A),
+         QA08A = case_when(
+           QA08A == "1" ~ "Non",
+           QA08A == "2" ~ "Oui, parfois",
+           QA08A == "3" ~ "Oui, Tous les jours ",
+           QA08A == "4" ~ "Non concerné(e)",
+           TRUE ~ QA08A                      
+         ))
+
+tab_per <- tab_per %>%
+  mutate(QA08A = factor(QA08A, levels = c("Oui, parfois", "Non", "Non concerné(e)")))
+
+ggplot(tab_mer, aes(x = factor(QA08A), y = total, fill = factor(Q27A, labels = c("aucune", "moins d'une fois par semaine", "moins d'une fois par jour", "1-10", "11-20", "20 et plus")))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Tabagisme du jeune selon la consommation du père",
+       x = "Fréquence à laquelle fume le père", 
+       y = "Effectif ayant répondu",
+       fill = "Nombre de cigarettes consommées par le jeune durant le mois") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#test 
+
+tab_per <- toutes_les_q %>% 
+  filter(!is.na(Q27A), !is.na(QA08A)) %>% 
+  mutate(
+    # Modifier les valeurs de Q27A
+    Q27A = ifelse(Q27A == 5, 4, Q27A),
+    Q27A = ifelse(Q27A == 6, 5, Q27A),
+    # Modifier QA08A si nécessaire
+    QA08A = ifelse(QA08A == 3, 2, QA08A)
+  ) %>% 
+  group_by(Q27A, QA08A) %>% 
+  summarise(total = n(), .groups = "drop")  # Utilisation de n() pour compter les occurrences
+
+# Transformer QA08A en facteur avec les bonnes étiquettes
+tab_per <- tab_per %>%
+  mutate(QA08A = as.character(QA08A),
+         QA08A = case_when(
+           QA08A == "1" ~ "Non",
+           QA08A == "2" ~ "Oui, parfois",
+           QA08A == "3" ~ "Oui, Tous les jours ",
+           QA08A == "4" ~ "Non concerné(e)",
+           TRUE ~ QA08A                      
+         ))
+
+# Assurez-vous que QA08A est un facteur avec l'ordre spécifié
+tab_per <- tab_per %>%
+  mutate(QA08A = factor(QA08A, levels = c("Oui, parfois", "Non", "Non concerné(e)")))
+
+# Création du graphique
+ggplot(tab_per, aes(x = QA08A, y = total, fill = factor(Q27A, labels = c("aucune", "moins d'une fois par semaine", "moins d'une fois par jour", "1-10", "11-20", "20 et plus")))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Tabagisme du jeune selon la consommation du père",
+       x = "Fréquence à laquelle fume le père", 
+       y = "Effectif ayant répondu",
+       fill = "Nombre de cigarettes consommées par le jeune durant le mois") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
