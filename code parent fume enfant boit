@@ -1,5 +1,5 @@
 #dans cette fiche, je veux créer une base de donnée avec comment les enfants 
-#boivent (A01) selon la consommation de tabac de leur parents (A08)
+#boivent (Q27) selon la consommation de tabac de leur parents (A08)
 
 #je commence par créer la base de donnée avec les infos qui me conviennt 
 rm(list=ls())
