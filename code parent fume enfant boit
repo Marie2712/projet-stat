@@ -1,0 +1,93 @@
+#dans cette fiche, je veux créer une base de donnée avec comment les enfants 
+#boivent (A01) selon la consommation de tabac de leur parents (A08)
+
+#je commence par créer la base de donnée avec les infos qui me conviennt 
+rm(list=ls())
+
+bdd <- read.csv("bdd_2022 (1).csv", sep =";")
+dico_var <- read.csv("dico.csv")
+
+toutes_les_q <- bdd[c(4, 6:7, 13:22 , 61:85, 142:181 , 231:234)]
+parfum_enfboit<- toutes_les_q[c(35, 70:71)]
+
+
+#je renomme pour mieux comprendre 
+parfum_enfboit <- parfum_enfboit %>% 
+  rename(Nb_verres_30 = Q35) %>% 
+  rename(Conso_tabac_mere = QA08B) %>% 
+  rename(Conso_tabac_pere = QA08A)
+
+#puis on étudie la répartition de l'aclool dans le mois pour les jeunes
+
+repar_q <- toutes_les_q[c(35)]
+repart_r <- dico_var[c(214:220), c(1:4)]
+
+repar_q <- repar_q %>% 
+  count(Q35) %>% 
+  rename(Modalite = Q35) %>% 
+  rename(occurence = n) %>% 
+  filter(!is.na(Modalite))
+
+
+repartition_enf <- merge(repar_q, repart_r, by= "Modalite")
+
+#on décide alors de regrouper de 6 à 19 et 20 et plus 
+
+repart_enf_vf <- repartition_enf %>%
+  mutate(
+    Modalite = ifelse(Modalite %in% c(4, 5), 4, Modalite),
+    Modalite_Label = ifelse(Modalite == 4, "6-19 fois", Modalite_Label)
+  ) %>%
+  mutate(
+    Modalite = ifelse(Modalite %in% c(6, 7), 5, Modalite),
+    Modalite_Label = ifelse(Modalite == 5, "20 ou plus fois", Modalite_Label)
+  )%>%
+  group_by(Modalite, Modalite_Label, Question, Question_Label) %>% 
+  summarise(occurence = sum(occurence), .groups = "drop")
+
+
+tab_merenf <- parfum_enfboit[, c(1,3)]
+
+tab_mereenfsign <- dico_var[c(475:478), c(1:4)]
+
+tab_merenf <- tab_merenf %>% 
+  filter(!is.na(Conso_tabac_mere)) %>% 
+  filter(!is.na(Nb_verres_30)) 
+
+
+
+
+#on fait un graphique pour mettre en lien les deux. 
+
+
+tab_merenf_summary <- toutes_les_q %>% 
+  filter(!is.na(Q35), !is.na(QA08B)) %>% 
+  mutate(Q35 = ifelse(Q35 == 5, 4, Q35)) %>% 
+  mutate(Q35 = ifelse(Q35 == 6, 5, Q35)) %>% 
+  mutate(Q35 = ifelse(Q35 == 7, 5, Q35)) %>% 
+  group_by(Q35, QA08B) %>% 
+  summarise(total = sum(Q35, na.rm= TRUE))
+
+
+tab_merenf_summary <-tab_merenf_summary%>%
+  mutate(QA08B = as.character(QA08B),
+         QA08B = case_when(
+           QA08B == "1" ~ "Non",
+           QA08B == "2" ~ "Oui, parfois",
+           QA08B == "3" ~ "Oui, tous les jours",
+           QA08B == "4" ~ "Non concerné(e)",
+           TRUE ~ QA08B                       
+         ))
+
+ggplot(tab_merenf_summary, aes(x = factor(QA08B), y = total, fill = factor(Q35, labels = c("0", "1-2", "3-5", "6-19", "20 et plus")))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Consommation d'alcool du jeune selon la consommation de tabac de la mère",
+       x = "Fréquence à laquelle fume la mère au moment du repas", 
+       y = "Effectif ayant répondu",
+       fill = "Nombre de verre consommé par le jeune durant le mois") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+# puis je fais le même travail pour le père 
+
