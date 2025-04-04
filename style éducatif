@@ -1,0 +1,676 @@
+library(dplyr)
+library(janitor)
+library(gtsummary)
+library(ggplot2)
+library(scales)
+getwd()
+setwd("/Users/rebecca-rosehuillet/projet stat")
+
+bdd<-read.csv2("bdd_2022.csv")
+dico_var <- read.csv("dico.csv")
+df_analyse <- bdd %>%
+  # Sélection des variables nécessaires
+  select(Q33, QA11A, QA11B) %>%
+  
+  # Filtrage des répondants valides
+  filter(Q33 %in% c(1, 2),  # Garde seulement 1 (Non) et 2 (Oui) pour Q33
+         QA11A %in% c(1, 2, 3),  # Filtre les réponses valides QA11A
+         QA11B %in% c(1, 2, 3)) %>%  # Filtre les réponses valides QA11B
+  
+  # Recodage
+  mutate(
+    # Variable réponse alcool
+    alcool = if_else(Q33 == 2, "Oui", "Non"),
+    
+    # Création de la variable style éducatif combinée
+    style_educatif = case_when(
+      QA11A == 3 & QA11B == 3 ~ "Parents stricts",       # Deux Oui
+      QA11A == 3 | QA11B == 3 ~ "Parents moyennement stricts", # Un Oui
+      TRUE ~ "Parents non stricts"                       # Deux Non
+    ),
+    
+    # Conversion en facteur ordonné
+    style_educatif = factor(style_educatif,
+                            levels = c("Parents non stricts", 
+                                       "Parents moyennement stricts", 
+                                       "Parents stricts"))
+  )
+
+# Vérification des effectifs
+table(df_analyse$style_educatif)
+
+# Vérification croisée
+table(QA11A = df_analyse$QA11A, 
+      QA11B = df_analyse$QA11B, 
+      style_educatif = df_analyse$style_educatif)
+
+
+tbl<-df_analyse %>%
+  tabyl(style_educatif, alcool) %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 1) %>%
+  adorn_ns() %>%
+  adorn_title("top", 
+              col_name = "Consommation d'alcool", 
+              row_name = "Style éducatif parental")
+
+# Test du chi-deux
+chisq.test(table(df_analyse$style_educatif, df_analyse$alcool))
+#pas de lien entre style éducatif et conso alcool 
+# Préparation des données pour un graphique avec barres côte-à-côte
+df_plot_bar <- df_analyse %>%
+  group_by(style_educatif, alcool) %>%
+  summarise(n = n(), .groups = "drop")
+
+# Graphique côte-à-côte
+ggplot(df_plot_bar, aes(x = style_educatif, y = n, fill = alcool)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.6) +
+  scale_fill_manual(values = c("Non" = "darkgreen", "Oui" = "darkorange")) +
+  labs(
+    title = "Consommation d'alcool des jeunes selon le style éducatif parental",
+    x = "Style éducatif parental",
+    y = "Nombre d'élèves",
+    fill = "A consommé de l'alcool"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "top",
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+    axis.text.x = element_text(angle = 15, hjust = 1)
+  )
+
+#conso d'alcool et parents comprehensif 
+
+
+# Création de la base d'analyse
+df_com <- bdd %>%
+  select(Q33, QA11C, QA11D) %>%
+  filter(
+    Q33 %in% c(1, 2),       # Réponses valides pour alcool
+    QA11C %in% c(1, 2, 3),  # Réponses valides pour QA11C
+    QA11D %in% c(1, 2, 3)   # Réponses valides pour QA11D
+  ) %>%
+  mutate(
+    alcool = if_else(Q33 == 2, "Oui", "Non"),  # Conso alcool
+    
+    style_educatif = case_when(  # Construction du style éducatif (compréhension)
+      QA11C == 3 & QA11D == 3 ~ "Parents compréhensifs",       
+      QA11C == 3 | QA11D == 3 ~ "Parents moyennement compréhensifs", 
+      TRUE ~ "Parents non compréhensifs"
+    ),
+    
+    style_educatif = factor(
+      style_educatif,
+      levels = c("Parents non compréhensifs", 
+                 "Parents moyennement compréhensifs", 
+                 "Parents compréhensifs")
+    )
+  )
+
+# Vérifications de structure
+table(df_com$style_educatif)
+table(QA11C = df_com$QA11C, QA11D = df_com$QA11D, style_educatif = df_com$style_educatif)
+
+# Tableau croisé avec pourcentages
+tb_coml <- df_com %>%
+  tabyl(style_educatif, alcool) %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 1) %>%
+  adorn_ns() %>%
+  adorn_title(
+    "top", 
+    col_name = "Consommation d'alcool", 
+    row_name = "Style éducatif parental (compréhension)"
+  )
+
+# Test du chi-deux
+chisq.test(table(df_com$style_educatif, df_com$alcool))
+print(chisq_result)
+
+# Préparation pour graphique
+df_plot_bar_com <- df_com %>%
+  group_by(style_educatif, alcool) %>%
+  summarise(n = n(), .groups = "drop")
+
+# Graphique à barres côte-à-côte
+ggplot(df_plot_bar_com, aes(x = style_educatif, y = n, fill = alcool)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.6) +
+  scale_fill_manual(values = c("Non" = "darkgreen", "Oui" = "darkorange")) +
+  labs(
+    title = "Consommation d'alcool des jeunes selon la compréhension perçue des parents",
+    x = "Style éducatif parental (compréhension)",
+    y = "Nombre d'élèves",
+    fill = "A consommé de l'alcool"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "top",
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+    axis.text.x = element_text(angle = 15, hjust = 1)
+  )
+
+#mixte sur conso alcool enfant 
+df_mixte <- bdd %>%
+  select(Q33, QA11A, QA11B, QA11C, QA11D) %>%
+  filter(
+    Q33 %in% c(1, 2),
+    QA11A %in% c(1, 2, 3),
+    QA11B %in% c(1, 2, 3),
+    QA11C %in% c(1, 2, 3),
+    QA11D %in% c(1, 2, 3)
+  ) %>%
+  mutate(
+    alcool = if_else(Q33 == 2, "Oui", "Non"),
+    
+    # Style strict
+    strict = case_when(
+      QA11A == 3 & QA11B == 3 ~ "Oui",
+      QA11A == 3 | QA11B == 3 ~ "Moyen",
+      TRUE ~ "Non"
+    ),
+    
+    # Style compréhensif
+    comprehensif = case_when(
+      QA11C == 3 & QA11D == 3 ~ "Oui",
+      QA11C == 3 | QA11D == 3 ~ "Moyen",
+      TRUE ~ "Non"
+    ),
+    
+    # Style combiné
+    style_mixte = case_when(
+      strict == "Oui" & comprehensif == "Oui" ~ "Stricts et compréhensifs",
+      strict == "Oui" & comprehensif == "Non" ~ "Stricts mais pas compréhensifs",
+      strict == "Non" & comprehensif == "Oui" ~ "Compréhensifs mais pas stricts",
+      TRUE ~ "Ni stricts ni compréhensifs"
+    ),
+    
+    style_mixte = factor(style_mixte, levels = c(
+      "Ni stricts ni compréhensifs",
+      "Compréhensifs mais pas stricts",
+      "Stricts mais pas compréhensifs",
+      "Stricts et compréhensifs"
+    ))
+  )
+# Tableau croisé
+df_mixte %>%
+  tabyl(style_mixte, alcool) %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 1) %>%
+  adorn_ns() %>%
+  adorn_title("top", row_name = "Style parental combiné", col_name = "Conso d'alcool")
+# Test du chi-deux
+chisq.test(table(df_mixte$style_mixte, df_mixte$alcool))
+df_plot_mixte <- df_mixte %>%
+  group_by(style_mixte, alcool) %>%
+  summarise(n = n(), .groups = "drop")
+
+ggplot(df_plot_mixte, aes(x = style_mixte, y = n, fill = alcool)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.6) +
+  scale_fill_manual(values = c("Non" = "darkgreen", "Oui" = "darkorange")) +
+  labs(
+    title = "Consommation d'alcool selon le style parental combiné",
+    x = "Style parental (strict/compréhensif)",
+    y = "Nombre d'élèves",
+    fill = "A consommé de l'alcool"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.text.x = element_text(angle = 15, hjust = 1),
+    legend.position = "top"
+  )
+ 
+
+#fumer style éducatif TABAC 
+##strict
+df_tabac_strict <- bdd %>%
+  # Sélection des variables nécessaires
+  select(Q26A1, Q26B1, Q26C1, Q26D1, QA11A, QA11B) %>%
+  
+  # Filtrage des répondants valides
+  filter(
+    QA11A %in% c(1, 2, 3),
+    QA11B %in% c(1, 2, 3),
+    Q26A1 %in% c(1, 2, 3) |
+      Q26B1 %in% c(1, 2, 3) |
+      Q26C1 %in% c(1, 2, 3) |
+      Q26D1 %in% c(1, 2, 3)
+  ) %>%
+  
+  # Recodage
+  mutate(
+    # Variable style éducatif (strict)
+    style_educatif = case_when(
+      QA11A == 3 & QA11B == 3 ~ "Parents stricts",
+      QA11A == 3 | QA11B == 3 ~ "Parents moyennement stricts",
+      TRUE ~ "Parents non stricts"
+    ),
+    
+    style_educatif = factor(style_educatif,
+                            levels = c("Parents non stricts", 
+                                       "Parents moyennement stricts", 
+                                       "Parents stricts")),
+    
+    # Création de la variable tabac
+    tabac = if_else(
+      Q26A1 %in% c(2, 3) |
+        Q26B1 %in% c(2, 3) |
+        Q26C1 %in% c(2, 3) |
+        Q26D1 %in% c(2, 3),
+      "Oui", "Non"
+    )
+  )
+
+# Vérification des effectifs
+table(df_tabac_strict$style_educatif)
+
+# Vérification croisée
+table(QA11A = df_tabac_strict$QA11A, 
+      QA11B = df_tabac_strict$QA11B, 
+      style_educatif = df_tabac_strict$style_educatif)
+
+# Tableau croisé avec pourcentages et effectifs
+tbl_tabac <- df_tabac_strict %>%
+  tabyl(style_educatif, tabac) %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 1) %>%
+  adorn_ns() %>%
+  adorn_title("top", 
+              col_name = "Consommation de tabac", 
+              row_name = "Style éducatif parental")
+
+# Affichage du tableau
+tbl_tabac
+#chi deux >0,05 lien!!
+chisq.test(table(df_tabac_strict$style_educatif, df_tabac_strict$tabac))
+
+#graph
+df_plot_tabac <- df_tabac_strict %>%
+  group_by(style_educatif, tabac) %>%
+  summarise(n = n(), .groups = "drop")
+
+ggplot(df_plot_tabac, aes(x = style_educatif, y = n, fill = tabac)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.6) +
+  scale_fill_manual(values = c("Non" = "darkgreen", "Oui" = "darkorange")) +
+  labs(
+    title = "Consommation de tabac selon le style éducatif parental",
+    x = "Style éducatif parental",
+    y = "Nombre d'élèves",
+    fill = "Fume du tabac"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "top",
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+    axis.text.x = element_text(angle = 15, hjust = 1)
+  )
+
+#compréhensif
+# Création de la base d'analyse pour style compréhensif + tabac
+df_tabac_compr <- bdd %>%
+  select(Q26A1, Q26B1, Q26C1, Q26D1, QA11C, QA11D) %>%
+  
+  # Filtrer les réponses valides
+  filter(
+    QA11C %in% c(1, 2, 3),
+    QA11D %in% c(1, 2, 3),
+    Q26A1 %in% c(1, 2, 3) |
+      Q26B1 %in% c(1, 2, 3) |
+      Q26C1 %in% c(1, 2, 3) |
+      Q26D1 %in% c(1, 2, 3)
+  ) %>%
+  
+  # Recodage
+  mutate(
+    # Style éducatif basé sur la compréhension
+    style_educatif = case_when(
+      QA11C == 3 & QA11D == 3 ~ "Parents compréhensifs",
+      QA11C == 3 | QA11D == 3 ~ "Parents moyennement compréhensifs",
+      TRUE ~ "Parents non compréhensifs"
+    ),
+    
+    style_educatif = factor(style_educatif,
+                            levels = c("Parents non compréhensifs",
+                                       "Parents moyennement compréhensifs",
+                                       "Parents compréhensifs")),
+    
+    # Création de la variable "tabac"
+    tabac = if_else(
+      Q26A1 %in% c(2, 3) |
+        Q26B1 %in% c(2, 3) |
+        Q26C1 %in% c(2, 3) |
+        Q26D1 %in% c(2, 3),
+      "Oui", "Non"
+    )
+  )
+
+tbl_tabac_compr <- df_tabac_compr %>%
+  tabyl(style_educatif, tabac) %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 1) %>%
+  adorn_ns() %>%
+  adorn_title("top", 
+              row_name = "Style éducatif parental (compréhension)", 
+              col_name = "Consommation de tabac")
+
+tbl_tabac_compr
+ 
+#test chi deux 
+chisq.test(table(df_tabac_compr$style_educatif, df_tabac_compr$tabac)) #lien significatif
+
+df_plot_compr <- df_tabac_compr %>%
+  group_by(style_educatif, tabac) %>%
+  summarise(n = n(), .groups = "drop")
+
+ggplot(df_plot_compr, aes(x = style_educatif, y = n, fill = tabac)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.6) +
+  scale_fill_manual(values = c("Non" = "darkgreen", "Oui" = "darkorange")) +
+  labs(
+    title = "Consommation de tabac selon la compréhension perçue des parents",
+    x = "Style éducatif parental (compréhension)",
+    y = "Nombre d'élèves",
+    fill = "Fume du tabac"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "top",
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.text.x = element_text(angle = 15, hjust = 1)
+  )
+
+##mixte tabac 
+df_tabac_mixte <- bdd %>%
+  select(Q26A1, Q26B1, Q26C1, Q26D1, QA11A, QA11B, QA11C, QA11D) %>%
+  
+  # Filtrer les répondants valides
+  filter(
+    QA11A %in% c(1, 2, 3),
+    QA11B %in% c(1, 2, 3),
+    QA11C %in% c(1, 2, 3),
+    QA11D %in% c(1, 2, 3),
+    Q26A1 %in% c(1, 2, 3) |
+      Q26B1 %in% c(1, 2, 3) |
+      Q26C1 %in% c(1, 2, 3) |
+      Q26D1 %in% c(1, 2, 3)
+  ) %>%
+  
+  mutate(
+    # Dimensions séparées
+    strict = case_when(
+      QA11A == 3 & QA11B == 3 ~ "Oui",
+      QA11A == 3 | QA11B == 3 ~ "Moyen",
+      TRUE ~ "Non"
+    ),
+    
+    comprehensif = case_when(
+      QA11C == 3 & QA11D == 3 ~ "Oui",
+      QA11C == 3 | QA11D == 3 ~ "Moyen",
+      TRUE ~ "Non"
+    ),
+    
+    # Style mixte
+    style_mixte = case_when(
+      strict == "Oui" & comprehensif == "Oui" ~ "Stricts et compréhensifs",
+      strict == "Oui" & comprehensif == "Non" ~ "Stricts mais pas compréhensifs",
+      strict == "Non" & comprehensif == "Oui" ~ "Compréhensifs mais pas stricts",
+      TRUE ~ "Ni stricts ni compréhensifs"
+    ),
+    
+    style_mixte = factor(style_mixte, levels = c(
+      "Ni stricts ni compréhensifs",
+      "Compréhensifs mais pas stricts",
+      "Stricts mais pas compréhensifs",
+      "Stricts et compréhensifs"
+    )),
+    
+    # Tabac : Oui si au moins une réponse = 2 ou 3
+    tabac = if_else(
+      Q26A1 %in% c(2, 3) |
+        Q26B1 %in% c(2, 3) |
+        Q26C1 %in% c(2, 3) |
+        Q26D1 %in% c(2, 3),
+      "Oui", "Non"
+    )
+  )
+df_tabac_mixte %>%
+  tabyl(style_mixte, tabac) %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 1) %>%
+  adorn_ns() %>%
+  adorn_title("top", 
+              row_name = "Style éducatif parental mixte", 
+              col_name = "Consommation de tabac")
+chisq.test(table(df_tabac_mixte$style_mixte, df_tabac_mixte$tabac))
+df_plot_mixte <- df_tabac_mixte %>%
+  group_by(style_mixte, tabac) %>%
+  summarise(n = n(), .groups = "drop")
+
+ggplot(df_plot_mixte, aes(x = style_mixte, y = n, fill = tabac)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.6) +
+  scale_fill_manual(values = c("Non" = "darkgreen", "Oui" = "darkorange")) +
+  labs(
+    title = "Consommation de tabac selon le style éducatif parental mixte",
+    x = "Style parental (strict + compréhensif)",
+    y = "Nombre d'élèves",
+    fill = "Fume du tabac"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    legend.position = "top",
+    axis.text.x = element_text(angle = 15, hjust = 1)
+  )
+
+
+##ivresse 
+df_ivresse <- bdd %>%
+  # Sélection des variables nécessaires
+  select(Q36, QA11A, QA11B) %>%
+  
+  # Filtrage des répondants valides
+  filter(Q36 %in% c(1, 2),  # Garde seulement 1 (Non) et 2 (Oui) pour Q33
+         QA11A %in% c(1, 2, 3),  # Filtre les réponses valides QA11A
+         QA11B %in% c(1, 2, 3)) %>%  # Filtre les réponses valides QA11B
+  
+  # Recodage
+  mutate(
+    # Variable réponse ivresse
+    ivresse = if_else(Q36 == 2, "Oui", "Non"),
+    
+    # Création de la variable style éducatif combinée
+    style_educatif = case_when(
+      QA11A == 3 & QA11B == 3 ~ "Parents stricts",       # Deux Oui
+      QA11A == 3 | QA11B == 3 ~ "Parents moyennement stricts", # Un Oui
+      TRUE ~ "Parents non stricts"                       # Deux Non
+    ),
+    
+    # Conversion en facteur ordonné
+    style_educatif = factor(style_educatif,
+                            levels = c("Parents non stricts", 
+                                       "Parents moyennement stricts", 
+                                       "Parents stricts"))
+  )
+
+# Vérification des effectifs
+table(df_ivresse$style_educatif)
+
+# Vérification croisée
+table(QA11A = df_ivresse$QA11A, 
+      QA11B = df_ivresse$QA11B, 
+      style_educatif = df_ivresse$style_educatif)
+
+
+tbl_ivresse<-df_ivresse %>%
+  tabyl(style_educatif, ivresse) %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 1) %>%
+  adorn_ns() %>%
+  adorn_title("top", 
+              col_name = "ivresse", 
+              row_name = "Style éducatif parental")
+
+# Test du chi-deux
+chisq.test(table(df_ivresse$style_educatif, df_ivresse$ivresse))#lien 
+
+# Préparation des données pour un graphique avec barres côte-à-côte
+df_plot_bar_ivresse <- df_ivresse %>%
+  group_by(style_educatif, ivresse) %>%
+  summarise(n = n(), .groups = "drop")
+
+# Graphique côte-à-côte
+ggplot(df_plot_bar_ivresse, aes(x = style_educatif, y = n, fill = ivresse)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.6) +
+  scale_fill_manual(values = c("Non" = "darkgreen", "Oui" = "darkorange")) +
+  labs(
+    title = "Etat d'ivresse des jeunes selon le style éducatif parental",
+    x = "Style éducatif parental",
+    y = "Nombre d'élèves",
+    fill = "A était en état d'ivresse"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "top",
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+    axis.text.x = element_text(angle = 15, hjust = 1)
+  )
+
+#ivresse et parents comprehensif 
+
+
+# Création de la base d'analyse
+df_com_ivresse <- bdd %>%
+  select(Q36, QA11C, QA11D) %>%
+  filter(
+    Q36 %in% c(1, 2),       # Réponses valides pour ivresse
+    QA11C %in% c(1, 2, 3),  # Réponses valides pour QA11C
+    QA11D %in% c(1, 2, 3)   # Réponses valides pour QA11D
+  ) %>%
+  mutate(
+    ivresse = if_else(Q36 == 2, "Oui", "Non"),  # Conso ivresse
+    
+    style_educatif = case_when(  # Construction du style éducatif (compréhension)
+      QA11C == 3 & QA11D == 3 ~ "Parents compréhensifs",       
+      QA11C == 3 | QA11D == 3 ~ "Parents moyennement compréhensifs", 
+      TRUE ~ "Parents non compréhensifs"
+    ),
+    
+    style_educatif = factor(
+      style_educatif,
+      levels = c("Parents non compréhensifs", 
+                 "Parents moyennement compréhensifs", 
+                 "Parents compréhensifs")
+    )
+  )
+
+# Vérifications de structure
+table(df_com_ivresse$style_educatif)
+table(QA11C = df_com_ivresse$QA11C, QA11D = df_com_ivresse$QA11D, style_educatif = df_com_ivresse$style_educatif)
+
+# Tableau croisé avec pourcentages
+tb_coml_ivresse <- df_com_ivresse %>%
+  tabyl(style_educatif, ivresse) %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 1) %>%
+  adorn_ns() %>%
+  adorn_title(
+    "top", 
+    col_name = "ivresse", 
+    row_name = "Style éducatif parental (compréhension)"
+  )
+
+# Test du chi-deux
+chisq.test(table(df_com_ivresse$style_educatif, df_com_ivresse$ivresse))
+print(chisq_result)#lien
+
+# Préparation pour graphique
+df_plot_bar_com_ivresse <- df_com_ivresse %>%
+  group_by(style_educatif, ivresse) %>%
+  summarise(n = n(), .groups = "drop")
+
+# Graphique à barres côte-à-côte
+ggplot(df_plot_bar_com_ivresse, aes(x = style_educatif, y = n, fill = ivresse)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.6) +
+  scale_fill_manual(values = c("Non" = "darkgreen", "Oui" = "darkorange")) +
+  labs(
+    title = "Etat d'ivresse des jeunes selon la compréhension perçue des parents",
+    x = "Style éducatif parental (compréhension)",
+    y = "Nombre d'élèves",
+    fill = "Etat d'ivresse"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "top",
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+    axis.text.x = element_text(angle = 15, hjust = 1)
+  )
+
+#mixte sur ivresse enfant 
+df_mixte_ivresse <- bdd %>%
+  select(Q36, QA11A, QA11B, QA11C, QA11D) %>%
+  filter(
+    Q36 %in% c(1, 2),
+    QA11A %in% c(1, 2, 3),
+    QA11B %in% c(1, 2, 3),
+    QA11C %in% c(1, 2, 3),
+    QA11D %in% c(1, 2, 3)
+  ) %>%
+  mutate(
+    ivresse = if_else(Q36 == 2, "Oui", "Non"),
+    
+    # Style strict
+    strict = case_when(
+      QA11A == 3 & QA11B == 3 ~ "Oui",
+      QA11A == 3 | QA11B == 3 ~ "Moyen",
+      TRUE ~ "Non"
+    ),
+    
+    # Style compréhensif
+    comprehensif = case_when(
+      QA11C == 3 & QA11D == 3 ~ "Oui",
+      QA11C == 3 | QA11D == 3 ~ "Moyen",
+      TRUE ~ "Non"
+    ),
+    
+    # Style combiné
+    style_mixte = case_when(
+      strict == "Oui" & comprehensif == "Oui" ~ "Stricts et compréhensifs",
+      strict == "Oui" & comprehensif == "Non" ~ "Stricts mais pas compréhensifs",
+      strict == "Non" & comprehensif == "Oui" ~ "Compréhensifs mais pas stricts",
+      TRUE ~ "Ni stricts ni compréhensifs"
+    ),
+    
+    style_mixte = factor(style_mixte, levels = c(
+      "Ni stricts ni compréhensifs",
+      "Compréhensifs mais pas stricts",
+      "Stricts mais pas compréhensifs",
+      "Stricts et compréhensifs"
+    ))
+  )
+# Tableau croisé
+df_mixte_ivresse %>%
+  tabyl(style_mixte, ivresse) %>%
+  adorn_percentages("row") %>%
+  adorn_pct_formatting(digits = 1) %>%
+  adorn_ns() %>%
+  adorn_title("top", row_name = "Style parental combiné", col_name = "ivresse")
+# Test du chi-deux
+chisq.test(table(df_mixte_ivresse$style_mixte, df_mixte_ivresse$ivresse))
+df_plot_mixte_ivresse <- df_mixte_ivresse %>%
+  group_by(style_mixte, ivresse) %>%
+  summarise(n = n(), .groups = "drop")
+
+ggplot(df_plot_mixte_ivresse, aes(x = style_mixte, y = n, fill = ivresse)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.6) +
+  scale_fill_manual(values = c("Non" = "darkgreen", "Oui" = "darkorange")) +
+  labs(
+    title = "Etat d'ivresse selon le style parental combiné",
+    x = "Style parental (strict/compréhensif)",
+    y = "Nombre d'élèves",
+    fill = "Etat d'ivresse"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.text.x = element_text(angle = 15, hjust = 1),
+    legend.position = "top"
+  )
