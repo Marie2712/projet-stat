@@ -1,7 +1,14 @@
 #la je veux trouver le lien entre les enfants qui fument (Q27) selon que 
 #leurs parents (QA07) boivent ou non 
-
+library(dplyr)
+library(DataExplorer)
+library(FactoMineR)
+library(factoextra)
+library(corrplot)
 rm(list=ls())
+
+getwd()
+setwd("/Users/jadep/OneDrive/Documents/1AENSAI/projet stat")
 
 #je commence comme d'hab à importer les bases de donnée 
 
@@ -117,11 +124,11 @@ repart_enf_vf <- repartition_enf %>%
 tab_merenf <- parboit_enffum[, c(1,3)]
 ###A REPRENDRE LA 
 
-tab_mereenfsign <- dico_var[c(475:478), c(1:4)]
+tab_mereenfsign <- dico_var[c(465:470), c(1:4)]
 
 tab_merenf <- tab_merenf %>% 
-  filter(!is.na(Conso_tabac_mere)) %>% 
-  filter(!is.na(Nb_verres_30)) 
+  filter(!is.na(Conso_alcool_mere)) %>% 
+  filter(!is.na(Nb_cig_30)) 
 
 
 
@@ -130,38 +137,48 @@ tab_merenf <- tab_merenf %>%
 
 
 tab_merenf_summary <- toutes_les_q %>% 
-  filter(!is.na(Q35), !is.na(QA08B)) %>% 
-  mutate(Q35 = ifelse(Q35 == 5, 4, Q35)) %>% 
-  mutate(Q35 = ifelse(Q35 == 6, 5, Q35)) %>% 
-  mutate(Q35 = ifelse(Q35 == 7, 5, Q35)) %>% 
-  group_by(Q35, QA08B) %>% 
-  summarise(total = sum(Q35, na.rm= TRUE))
+  mutate(QA07B = ifelse(QA07B == 4, 5, QA07B)) %>% 
+  filter(!is.na(Q27A), !is.na(QA07B)) %>% 
+  group_by(Q27A, QA07B) %>% 
+  summarise(nb = n(), .groups = "drop")
+
 
 
 tab_merenf_summary <-tab_merenf_summary%>%
-  mutate(QA08B = as.character(QA08B),
-         QA08B = case_when(
-           QA08B == "1" ~ "Non",
-           QA08B == "2" ~ "Oui, parfois",
-           QA08B == "3" ~ "Oui, tous les jours",
-           QA08B == "4" ~ "Non concerné(e)",
-           TRUE ~ QA08B                       
+  mutate(QA07B = as.character(QA07B),
+         QA07B = case_when(
+           QA07B == "1" ~ "Jamais",
+           QA07B == "2" ~ "Oui, rarement",
+           QA07B == "3" ~ "Oui, souvent",
+           QA07B == "5" ~ "Oui, tous les jours",
+           QA07B == "6" ~ "Non concerné(e)",
+           TRUE ~ QA07B                       
          ))
 
-ggplot(tab_merenf_summary, aes(x = factor(QA08B), y = total, fill = factor(Q35, labels = c("0", "1-2", "3-5", "6-19", "20 et plus")))) +
+ggplot(tab_merenf_summary, aes(
+  x = factor(QA07B),
+  y = nb,  # <- ou total, selon ta colonne réelle
+  fill = factor(Q27A,
+                levels = c(1, 2, 3, 4),
+                labels = c("Aucune", 
+                           "Moins d'une par semaine", 
+                           "1-10 cigarettes par jour", 
+                           "Plus de 11 cigarettes par jour"))
+)) +
   geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Consommation d'alcool du jeune selon la consommation de tabac de la mère",
-       x = "Fréquence à laquelle fume la mère au moment du repas", 
+  labs(title = "Consommation de tabac du jeune selon la consommation d'alcool de la mère",
+       x = "Fréquence à laquelle boit la mère au moment du repas", 
        y = "Effectif ayant répondu",
-       fill = "Nombre de verre consommé par le jeune durant le mois") +
+       fill = "Nombre fois où le jeune fume durant le mois") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 
 
 #puis je fais la même chose pour le père 
 #j'utilise deja cette table pour les enfantsn c'est celle qui est modifiée 
 #repart_enf_vf
-
+############## A REPRENDRER LE CODE ESRT FAUX
 tab_prrenf <- parfum_enfboit[, c(1:2)]
 
 tab_prreenfsign <- dico_var[c(471:474), c(1:4)]
@@ -195,7 +212,7 @@ tab_prrenf_summary <-tab_prrenf_summary%>%
            TRUE ~ QA08A                       
          ))
 
-ggplot(tab_prrenf_summary, aes(x = factor(QA08A), y = total, fill = factor(Q35, labels = c("0", "1-2", "3-5", "6-19", "20 et plus")))) +
+ggplot(tab_prrenf_summary, aes(x = factor(QA08A), y = total, fill = factor(Q35, labels = c("Aucune", "Moins d'une par semaine", "1-10 cigarettes par jour", "Plus de 11 cigarettes par jour")))) +
   geom_bar(stat = "identity", position = "dodge") +
   labs(title = "Consommation d'alcool du jeune selon la consommation de tabac du père",
        x = "Fréquence à laquelle fume le père au moment du repas", 
