@@ -178,14 +178,55 @@ ggplot(tab_merenf_summary, aes(
 #puis je fais la même chose pour le père 
 #j'utilise deja cette table pour les enfantsn c'est celle qui est modifiée 
 #repart_enf_vf
-############## A REPRENDRER LE CODE ESRT FAUX
-tab_prrenf <- parfum_enfboit[, c(1:2)]
+############## 
 
-tab_prreenfsign <- dico_var[c(471:474), c(1:4)]
+# On remplace les 4 par 5 si besoin dans Conso_alcool_pere
+tab_prrenf_summary <- tab_prrenf %>% 
+  mutate(Conso_alcool_pere = ifelse(Conso_alcool_pere == 4, 5, Conso_alcool_pere)) %>% 
+  group_by(Nb_cig_30, Conso_alcool_pere) %>% 
+  summarise(nb = n(), .groups = "drop")
+
+# On met des labels lisibles
+tab_prrenf_summary <- tab_prrenf_summary %>%
+  mutate(Conso_alcool_pere = as.character(Conso_alcool_pere),
+         Conso_alcool_pere = case_when(
+           Conso_alcool_pere == "1" ~ "Jamais",
+           Conso_alcool_pere == "2" ~ "Oui, rarement",
+           Conso_alcool_pere == "3" ~ "Oui, souvent",
+           Conso_alcool_pere == "5" ~ "Oui, tous les jours",
+           Conso_alcool_pere == "6" ~ "Non concerné(e)",
+           TRUE ~ Conso_alcool_pere
+         ))
+
+# Et on fait le graphique
+ggplot(tab_prrenf_summary, aes(
+  x = factor(Conso_alcool_pere),
+  y = nb,
+  fill = factor(Nb_cig_30,
+                levels = c(1, 2, 3, 4),
+                labels = c("Aucune", 
+                           "Moins d'une par semaine", 
+                           "1-10 cigarettes par jour", 
+                           "Plus de 11 cigarettes par jour"))
+)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Consommation de tabac du jeune selon la consommation d'alcool du père",
+       x = "Fréquence à laquelle boit le père au moment du repas", 
+       y = "Effectif ayant répondu",
+       fill = "Nombre de cigarettes fumées") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+#############################le code qui suit c'est le mien 
+
+
+tab_prrenf <- parboit_enffum[, c(1:2)]
+
+tab_prreenfsign <- dico_var[c(459:465), c(1:4)]
 
 tab_prrenf <- tab_prrenf %>% 
-  filter(!is.na(Conso_tabac_pere)) %>% 
-  filter(!is.na(Nb_verres_30)) 
+  filter(!is.na(Conso_alcool_pere)) %>% 
+  filter(!is.na(Nb_cig_30)) 
 
 
 
