@@ -1,0 +1,55 @@
+# Code pour faire un graphique de la consommation d'alcool moyenne des jeunes 
+
+    ggplot(bdd, aes(x = Q34)) +
+          geom_histogram(
+            binwidth = 1, 
+            fill = "steelblue", 
+            color = "white",
+            aes(y = after_stat(count)),
+            stat = "count"
+          ) +
+          geom_text(
+            aes(
+              y = after_stat(count),
+              label = scales::percent(after_stat(count)/sum(after_stat(count)), accuracy = 1)
+            ),
+            stat = "count",
+            vjust = -0.5,  # Ajuste la position verticale du texte
+            size = 3
+          ) +
+          labs(
+            title = "consommation moyenne des enfants",
+            x = "nombre de verre bus ce mois ci", 
+            y = "Nombre de répondants"
+          ) +
+          theme_minimal()
+
+
+
+
+# Graphique de la consommation moyenne des enfanrts des enfants de parents abstinents 
+
+    ggplot(base_enf_par_abst, aes(x = Q34)) +
+      geom_histogram(
+        binwidth = 1, 
+        fill = "steelblue", 
+        color = "white",
+        aes(y = after_stat(count)),
+        stat = "count"
+      ) +
+      geom_text(
+        aes(
+          y = after_stat(count),
+          label = scales::percent(after_stat(count)/sum(after_stat(count)), accuracy = 1)
+        ),
+        stat = "count",
+        vjust = -0.5,  # Ajuste la position verticale du texte
+        size = 3
+      ) +
+      labs(
+        title = "consommation des enfants dont les parents sont abstinents",
+        x = "nombre de verre bus ce mois ci", 
+        y = "Nombre de répondants"
+      ) +
+      theme_minimal()
+    
