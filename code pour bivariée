@@ -3,7 +3,7 @@ library(DataExplorer)
 library(FactoMineR)
 library(factoextra)
 library(corrplot)
-
+library(scales)
 
 
 getwd()
@@ -20,8 +20,8 @@ toutes_les_q <- bdd[c(4, 6:7, 13:22 , 61:85, 142:181 , 231:234)]
 tab_peremereenf <- toutes_les_q[c(35, 68:69)]
 tab_peremereenf <- tab_peremereenf %>% 
   rename(Nb_verres_30 = Q35) %>% 
-  rename(Conso_mere = QA07A) %>% 
-  rename(Conso_pere = QA07B)
+  rename(Conso_pere = QA07A) %>% 
+  rename(Conso_mere = QA07B)
 
 #on étudie déja la repartition 
 
@@ -33,7 +33,7 @@ repar_q <- repar_q %>%
   rename(Modalite = Q35) %>% 
   rename(occurence = n) %>% 
   filter(!is.na(Modalite))
-  
+
 
 repartition_enf <- merge(repar_q, repart_r, by= "Modalite")
 
@@ -54,12 +54,12 @@ repart_enf_vf <- repartition_enf %>%
 
 #que pour la mère, on modifie donc les tables 
 
-tab_merenf <- tab_peremereenf[, c(1:2)]
+tab_perenf <- tab_peremereenf[, c(1:2)]
 
-tab_mereenfsign <- dico_var[c(467:470), c(1:4)]
+tab_pereenfsign <- dico_var[c(467:470), c(1:4)]
 
-tab_merenf <- tab_merenf %>% 
-  filter(!is.na(Conso_mere)) %>% 
+tab_perenf <- tab_perenf %>% 
+  filter(!is.na(Conso_pere)) %>% 
   filter(!is.na(Nb_verres_30)) 
 
 #Comme on l'a fait pour la table enfant, on va remplacer 4-5 par 4 et 6-7 par 5
@@ -68,51 +68,16 @@ tab_merenf <- tab_merenf %>%
 #on fait un graphique pour mettre en lien les deux. 
 
 
-tab_merenf_summary <- toutes_les_q %>% 
-  filter(!is.na(Q35), !is.na(QA07B)) %>% 
-  mutate(QA07B = ifelse(QA07B == 3, 2, QA07B)) %>%
-  mutate(Q35 = ifelse(Q35 == 5, 4, Q35)) %>% 
-  mutate(Q35 = ifelse(Q35 == 6, 5, Q35)) %>% 
-  mutate(Q35 = ifelse(Q35 == 7, 5, Q35)) %>% 
-  group_by(Q35, QA07B) %>% 
-  summarise(total = sum(Q35, na.rm= TRUE))
-
-
-
-tab_merenf_summary <-tab_merenf_summary%>%
-  mutate(QA07B = as.character(QA07B),
-    QA07B = case_when(
-    QA07B == "1" ~ "Jamais",
-    QA07B == "2" ~ "Oui, rarement",
-    QA07B == "4" ~ "Oui, souvent",
-    QA07B == "5" ~ "Oui, tous les jours",
-    QA07B == "6" ~ "Non concerné(e)",
-    TRUE ~ QA07B                       
-  ))
-
-ggplot(tab_merenf_summary, aes(x = factor(QA07B), y = total, fill = factor(Q35, labels = c("0", "1-2", "3-5", "6-19", "20 et plus")))) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Consommation d'alcool du jeune selon la consommation de la mère",
-       x = "Fréquence à laquelle boit la mère au moment du repas", 
-       y = "Effectif ayant répondu",
-       fill = "Nombre de verre consommé par le jeune durant le mois") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  
-#on fait un test du khi 2 
-
-table_contingence1 <-table(tab_merenf)
-chisq.test(table_contingence1)
-
-
-#et du père 
 tab_perenf_summary <- toutes_les_q %>% 
   filter(!is.na(Q35), !is.na(QA07A)) %>% 
   mutate(QA07A = ifelse(QA07A == 3, 2, QA07A)) %>%
   mutate(Q35 = ifelse(Q35 == 5, 4, Q35)) %>% 
   mutate(Q35 = ifelse(Q35 == 6, 5, Q35)) %>% 
-  mutate(Q35 = ifelse(Q35 == 7, 5, Q35)) %>%
+  mutate(Q35 = ifelse(Q35 == 7, 5, Q35)) %>% 
   group_by(Q35, QA07A) %>% 
   summarise(total = sum(Q35, na.rm= TRUE))
+
+
 
 tab_perenf_summary <-tab_perenf_summary%>%
   mutate(QA07A = as.character(QA07A),
@@ -128,6 +93,41 @@ tab_perenf_summary <-tab_perenf_summary%>%
 ggplot(tab_perenf_summary, aes(x = factor(QA07A), y = total, fill = factor(Q35, labels = c("0", "1-2", "3-5", "6-19", "20 et plus")))) +
   geom_bar(stat = "identity", position = "dodge") +
   labs(title = "Consommation d'alcool du jeune selon la consommation du père",
+       x = "Fréquence à laquelle boit le père au moment du repas", 
+       y = "Effectif ayant répondu",
+       fill = "Nombre de verre consommé par le jeune durant le mois") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#on fait un test du khi 2 
+
+table_contingence1 <-table(tab_perenf)
+chisq.test(table_contingence1)
+
+
+#et de la mère
+tab_merenf_summary <- toutes_les_q %>% 
+  filter(!is.na(Q35), !is.na(QA07B)) %>% 
+  mutate(QA07B = ifelse(QA07B == 3, 2, QA07B)) %>%
+  mutate(Q35 = ifelse(Q35 == 5, 4, Q35)) %>% 
+  mutate(Q35 = ifelse(Q35 == 6, 5, Q35)) %>% 
+  mutate(Q35 = ifelse(Q35 == 7, 5, Q35)) %>%
+  group_by(Q35, QA07B) %>% 
+  summarise(total = sum(Q35, na.rm= TRUE))
+
+tab_merenf_summary <-tab_merenf_summary%>%
+  mutate(QA07B = as.character(QA07B),
+         QA07B = case_when(
+           QA07B == "1" ~ "Jamais",
+           QA07B == "2" ~ "Oui, rarement",
+           QA07B == "4" ~ "Oui, souvent",
+           QA07B == "5" ~ "Oui, tous les jours",
+           QA07B == "6" ~ "Non concerné(e)",
+           TRUE ~ QA07B                       
+         ))
+
+ggplot(tab_merenf_summary, aes(x = factor(QA07B), y = total, fill = factor(Q35, labels = c("0", "1-2", "3-5", "6-19", "20 et plus")))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Consommation d'alcool du jeune selon la consommation de la mère",
        x = "Fréquence à laquelle boit la mère au moment du repas", 
        y = "Effectif ayant répondu",
        fill = "Nombre de verre consommé par le jeune durant le mois") +
